@@ -1,10 +1,9 @@
-from colorama import Fore, init, Back
+from colorama import Fore, init
 import pyautogui as pg
 import subprocess
 import time
 import sys
 import os
-
 
 quiet = False # Modo silencioso
 valid = ['\t', '\n', '\r', ' ', '!', '"', '#', '$', '%', '&', "'", '(',
@@ -32,134 +31,90 @@ valid = ['\t', '\n', '\r', ' ', '!', '"', '#', '$', '%', '&', "'", '(',
 
 def jilog(text):
     if not quiet == True:
-        print(text)
-
+        print(f"{Fore.BLUE}[{Fore.LIGHTBLUE_EX}+{Fore.BLUE}] {Fore.RESET}{text}")
+    
 def cls():
     os.system("cls" if os.name == "nt" else "clear")
 
-def osn():
-    if os.name == "nt":
-        jilog(f"{Fore.BLUE}[Current OS]> {Fore.RESET} WindowsNT")
-    else:
-        jilog(f"{Fore.BLUE}[Current OS]> {Fore.RESET} Possible Linux")
-
-def pwd():
-    jilog(f"\n{Fore.BLUE}[Current DIR]> {Fore.LIGHTBLUE_EX}")
-    if os.name == "nt":
-        jilog(subprocess.check_output('cd', shell=True, text=True))
-    else:
-        jilog(subprocess.check_output('pwd', shell=True, text=True))
-    jilog(Fore.RESET)
-
-def vulnus_made():
-    jilog(f"""{Fore.CYAN}Yos built this with love <3
-          {Fore.RESET}""")
-
-def banner():
-    jilog(f"""{Fore.LIGHTBLUE_EX}=================================
-{Fore.BLUE}MyRubber - Yos
-{Fore.LIGHTBLUE_EX}================================={Fore.RESET}""")
-
 def setup():
     cls()
-    vulnus_made()
-    pwd()
+    jilog(f"Yos coded this with love <3")
     time.sleep(2)
     main()
 
-def main(keysfilename="keys.txt"):
-    cls()
-    banner()
-    pwd()
-    osn()
-    jilog(f"\n{Fore.LIGHTBLUE_EX}[INF]> Trying to read {Fore.LIGHTCYAN_EX}{keysfilename}{Fore.RESET}")
-    try:
-        f = open(keysfilename, "r")
-    except:
-        jilog(f"{Fore.LIGHTRED_EX}{keysfilename} not found{Fore.RESET}. Enter keystroke filename...")
-        try:
-            f = open(input(f"{Fore.CYAN}[FILENAME]> {Fore.RESET}"))
-        except:
-            jilog(f"{Fore.LIGHTRED_EX}You mistyped{Fore.RESET}. Try again...")
-            time.sleep(3)
-            main(keysfilename=keysfilename)
-    
-    for key in f.readlines():
-        key = str(key)
-        if key[-1::] == "\n":
-            key = key[:-1:]
-        jilog(f"{Fore.LIGHTCYAN_EX}[KEY]> ({len(key)} / {len(key.split('+'))}) {Fore.RESET}{key} ")
+def ejecutar(lineas=None):
+    loopline = None
 
-        if key[0:1] == "'":
+    for line in range(len(lineas)):
+        key = lineas[line].strip()
+        jilog(f"[KEY]> ({len(key)} / {len(key.split('+'))}) {key}") # Imprime la key
+
+        if key[0] == "'": # Raw
             key = key[1::]
             pg.write(key,0.01)
             continue
         
-        if key[0:1] == "\\":
-            if key[1::].split(" ")[0] == "sleep":
-                time.sleep(float(key[1::].split(" ")[1]))
+        elif key[0] == "\\": # Especial
+            cmd = key[1::]
+            if cmd == "pause":
+                input("Program paused. Press enter to continue...")
                 continue
-            elif key[1::].split(" ")[0] == "mv":
-                pg.moveTo(int(key[1::].split(" ")[1]), int(key[1::].split(" ")[2]))
-                continue
-
-        if str(len(key.split("+"))) == "2":
-            key = key.split("+")
-            pg.hotkey(key[0],key[1])
-            continue
-
-        elif str(len(key.split("+"))) > "2":
-            key = key.split("+")
-            for k in key:
+            elif cmd == "loop":
+                loopline = line
+            elif len(cmd.split(" ")) > 1: # Especial dobles
+                cmd = cmd.split(" ")
+                if cmd[0] == "sleep": # Sleep
+                    time.sleep(float(cmd[1]))
+                    continue
+                elif cmd[0] == "mv": # Mover cursor
+                    pg.moveTo(int(cmd[1]), int(cmd[2]))       
+                    continue
+        
+        elif len(key.split("+")) > 1: # Combinaciones
+            cmds = key.split("+")
+            for k in cmds:
                 pg.keyDown(k)
-            for k in key:
+            for k in cmds:
                 pg.keyUp(k)
             continue
-        
-        elif key == "click" or key == "lclick":
+
+        # Clicks
+        elif key == "click" or key == "\\lclick":
             pg.click(button='left')
             continue
 
-        elif key == "rclick":
+        elif key == "\\rclick":
             pg.click(button='right')
             continue
         
-        elif key.split(" ")[0] == "REM":
+        elif key.lower() in valid: # Single
+            pg.press(key.lower()) 
             continue
 
-        elif key.split(" ")[0] == "DELAY":
-            time.sleep(float(key.split(" ")[1])/1000)
-            continue
-        
-        elif key == "GUI":
-            pg.press('win')
+        else: # Keystroke
+            pg.write(key,0.01)
             continue
 
-        elif key.split(" ")[0] == "GUI":
-            pg.hotkey("win",key.split(" ")[1])
-            continue
+    if loopline != None:
+        ejecutar(lineas=lineas[loopline::])
 
-        elif key.split(" ")[0] == "STRING":
-            pg.write(key.split(" ")[1],0.01)
-            continue
-        
-        elif key.split(" ")[0].upper() == key.split(" ")[0] and len(key.split(" ")) == 2:
-            pg.hotkey(key.split(" ")[0].lower(), key.split(" ")[1].lower())
-            continue
+def main(keysfilename="keys.txt"):
+    cls()
+    jilog("=================================\n          MyRubber - Yos\n=================================\n")
+    jilog(f"Trying to read {keysfilename}")
+    
+    while not os.path.exists(keysfilename):
+        jilog(f"{keysfilename} not found. Enter keystroke filename...")
+        keysfilename = input(f"{Fore.CYAN}[FILENAME]> {Fore.RESET}")
+    cls()
+    
+    with open(keysfilename, 'r') as f:
+        lineas = f.readlines() 
 
-        elif key.lower() in valid:
-            pg.press(key.lower())
-            
-        else:
-            if str(key) in valid:
-                pg.press(key)
-                time.sleep(0.01)
-                continue
-            else:
-                pg.write(key,0.01)
-                continue
+    ejecutar(lineas=lineas)
 
 if __name__ == "__main__":
+    init()
     args = sys.argv # Aquí iría el argparse
     if len(args)-1 > 0: # Aquí si hay un nombre de archivo
         kfn = args[1] # Keys filename

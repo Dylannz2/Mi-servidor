@@ -1,7 +1,5 @@
 win+r
 \sleep 0.5
 notepad
-enter
 \sleep 0.5
-Soy un garbanzo explosivo
 enter
